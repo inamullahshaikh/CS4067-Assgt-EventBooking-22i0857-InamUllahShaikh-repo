@@ -1,0 +1,11 @@
+{
+  "name": "event-booking-frontend",
+  "version": "1.0.0",
+  "description": "Simple frontend for event booking",
+  "scripts": {
+    "start": "live-server src"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  }
+}

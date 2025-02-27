@@ -3,7 +3,7 @@ import os
 
 SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.example.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
-SMTP_USER = os.getenv("SMTP_USER", "user@example.com")
+SMTP_USER = os.getenv("SMTP_USER", "inamullahshaikh01@gmail.com")
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "password")
 
 def send_email(to_email, subject, message):

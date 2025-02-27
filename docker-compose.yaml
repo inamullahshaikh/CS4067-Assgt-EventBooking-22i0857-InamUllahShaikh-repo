@@ -1,0 +1,69 @@
+version: "3.8"
+services:
+  user-service:
+    build: ./user-services
+    ports:
+      - "5001:5001"
+    env_file:
+      - ./user-services/.env
+    depends_on:
+      - postgres
+
+  event-service:
+    build: ./event-service
+    ports:
+      - "5002:5002"
+    env_file:
+      - ./event-service/.env
+    depends_on:
+      - mongo
+
+  booking-service:
+    build: ./booking-service
+    ports:
+      - "5003:5003"
+    env_file:
+      - ./booking-service/.env
+    depends_on:
+      - postgres
+      - rabbitmq
+
+  notification-service:
+    build: ./notification-service
+    ports:
+      - "5004:5004"
+    env_file:
+      - ./notification-service/.env
+    depends_on:
+      - mongo
+      - rabbitmq
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=production
+
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 159357
+      POSTGRES_DB: userdb
+    ports:
+      - "5432:5432"
+
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+
+  rabbitmq:
+    image: rabbitmq:management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
