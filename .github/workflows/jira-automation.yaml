@@ -23,7 +23,7 @@ jobs:
           echo "ISSUES=$ISSUES" >> $env:GITHUB_ENV
 
       - name: Move Issues to In Progress
-        if: env.ISSUES -ne ''
+        if: ${{ env.ISSUES != '' }}
         run: |
           foreach ($ISSUE in $env:ISSUES) {
             curl --request POST `
