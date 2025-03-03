@@ -1,7 +1,7 @@
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
 from jose import jwt
-print("Hello")
+print("Hello.Hi")
 # Secret Key & Algorithm for JWT
 SECRET_KEY = "your_secret_key"
 ALGORITHM = "HS256"
