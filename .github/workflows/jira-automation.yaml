@@ -9,7 +9,7 @@ on:
 
 jobs:
   update-jira:
-    runs-on: ubuntu-latest # GitHub Actions can run on Ubuntu, even on Windows environments
+    runs-on: windows-latest
 
     steps:
       - name: Checkout Code
@@ -18,40 +18,36 @@ jobs:
       - name: Extract Jira Issue Keys from Commit Messages
         id: extract-issues
         run: |
-          ISSUES=$(git log --format=%B -n 1 | grep -oE 'CE20I-[0-9]+' | uniq)
-          echo "Found Jira Issues: $ISSUES"
-          echo "ISSUES=$ISSUES" >> $GITHUB_ENV
+          $ISSUES = git log --format=%B -n 1 | Select-String -Pattern 'CE20I-\d+' | ForEach-Object { $_.Matches.Value } | Sort-Object -Unique
+          Write-Host "Found Jira Issues: $ISSUES"
+          echo "ISSUES=$ISSUES" >> $env:GITHUB_ENV
 
       - name: Move Issues to In Progress
-        if: env.ISSUES != ''
+        if: env.ISSUES -ne ''
         run: |
-          for ISSUE in $ISSUES; do
-            curl --request POST \
-              --url "https://your-jira-instance.atlassian.net/rest/api/3/issue/$ISSUE/transitions" \
-              --user "$JIRA_USER:$JIRA_API_TOKEN" \
-              --header "Accept: application/json" \
-              --header "Content-Type: application/json" \
-              --data '{
-                "transition": { "id": "11" }  # Replace with your 'In Progress' transition ID
-              }'
-          done
+          foreach ($ISSUE in $env:ISSUES) {
+            curl --request POST `
+              --url "https://your-jira-instance.atlassian.net/rest/api/3/issue/$ISSUE/transitions" `
+              --user "$env:JIRA_USER:$env:JIRA_API_TOKEN" `
+              --header "Accept: application/json" `
+              --header "Content-Type: application/json" `
+              --data '{"transition": { "id": "11" }}'
+          }
         env:
           JIRA_USER: ${{ secrets.JIRA_USER }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
 
       - name: Move Issues to Done if Fixed
-        if: env.ISSUES != '' && contains(github.event.head_commit.message, 'fix') || contains(github.event.head_commit.message, 'resolve')
+        if: contains(github.event.head_commit.message, 'fix') || contains(github.event.head_commit.message, 'resolve')
         run: |
-          for ISSUE in $ISSUES; do
-            curl --request POST \
-              --url "https://your-jira-instance.atlassian.net/rest/api/3/issue/$ISSUE/transitions" \
-              --user "$JIRA_USER:$JIRA_API_TOKEN" \
-              --header "Accept: application/json" \
-              --header "Content-Type: application/json" \
-              --data '{
-                "transition": { "id": "21" }  # Replace with your 'Done' transition ID
-              }'
-          done
+          foreach ($ISSUE in $env:ISSUES) {
+            curl --request POST `
+              --url "https://your-jira-instance.atlassian.net/rest/api/3/issue/$ISSUE/transitions" `
+              --user "$env:JIRA_USER:$env:JIRA_API_TOKEN" `
+              --header "Accept: application/json" `
+              --header "Content-Type: application/json" `
+              --data '{"transition": { "id": "21" }}'
+          }
         env:
           JIRA_USER: ${{ secrets.JIRA_USER }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
