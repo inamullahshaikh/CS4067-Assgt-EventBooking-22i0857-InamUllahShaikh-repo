@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Create Event</title>
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #205781;
+        font-family: Arial, sans-serif;
+      }
+      .container {
+        background: #98d2c0;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        width: 100%;
+        max-width: 400px;
+      }
+      h2 {
+        margin-bottom: 20px;
+        font-weight: bold;
+        color: #205781;
+      }
+      .btn-primary {
+        background-color: #205781;
+        color: white;
+        width: 100%;
+        margin-top: 15px;
+        font-size: 18px;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        transition: 0.3s;
+        font-weight: bold;
+      }
+      .btn-primary:hover {
+        background-color: #174260;
+      }
+      .form-control {
+        margin-bottom: 15px;
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 8px;
+      }
+      .error {
+        color: red;
+        font-size: 14px;
+        margin-top: -10px;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Create Event</h2>
+      <input
+        type="text"
+        id="eventName"
+        class="form-control"
+        placeholder="Event Name"
+      />
+      <span id="nameError" class="error"></span>
+
+      <input type="date" id="eventDate" class="form-control" />
+      <span id="dateError" class="error"></span>
+
+      <input
+        type="text"
+        id="eventVenue"
+        class="form-control"
+        placeholder="Event Venue"
+      />
+      <span id="venueError" class="error"></span>
+
+      <button class="btn-primary" onclick="submitEvent()">Create Event</button>
+    </div>
+
+    <script>
+      function submitEvent() {
+        const name = document.getElementById("eventName").value.trim();
+        const date = document.getElementById("eventDate").value;
+        const venue = document.getElementById("eventVenue").value.trim();
+
+        const today = new Date().toISOString().split("T")[0];
+        let errorMsg = "";
+
+        if (!name) {
+          errorMsg += "❌ Event name is required.\n";
+        }
+        if (!date) {
+          errorMsg += "❌ Event date is required.\n";
+        } else if (date <= today) {
+          errorMsg += "❌ Event date must be in the future.\n";
+        }
+        if (!venue) {
+          errorMsg += "❌ Event venue is required.\n";
+        }
+
+        if (errorMsg) {
+          alert(errorMsg);
+          return;
+        }
+
+        fetch("http://localhost:5000/events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name, date, venue }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.error) {
+              alert("❌ " + data.error);
+            } else {
+              alert("✅ Event Created Successfully!");
+              window.location.href = "manage-events.html";
+            }
+          })
+          .catch((error) => {
+            alert("❌ Failed to create event. Please try again.");
+            console.error("Error:", error);
+          });
+      }
+    </script>
+  </body>
+</html>

@@ -1,23 +1,26 @@
 const express = require("express");
-const mongoose = require("mongoose");
+const cors = require("cors");
+const mongoose = require("mongoose"); // ✅ Import mongoose
 
 const app = express();
-app.use(express.json()); // Use built-in JSON parser
+app.use(express.json());
+app.use(cors());
 
-// Connect to MongoDB
+// ✅ MongoDB Connection (Using Mongoose Only)
+const uri = "mongodb://localhost:27017/eventsdb";
 mongoose
-  .connect("mongodb://localhost:27017/eventsdb")
+  .connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.error("❌ MongoDB Connection Error:", err));
 
-// Event Schema & Model
+// ✅ Event Schema & Model
 const eventSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     date: { type: Date, required: true },
     venue: { type: String, required: true, trim: true },
   },
-  { timestamps: true }
+  { collection: "events", timestamps: true }
 );
 const Event = mongoose.model("Event", eventSchema);
 
@@ -37,13 +40,15 @@ app.post("/events", async (req, res) => {
 app.get("/events", async (req, res) => {
   try {
     const events = await Event.find();
+    if (!events.length)
+      return res.status(404).json({ message: "No events found" });
     res.json(events);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-// 🔍 Get Event by ID (with ID validation)
+// 🔍 Get Event by ID
 app.get("/events/:id", async (req, res) => {
   if (!mongoose.Types.ObjectId.isValid(req.params.id))
     return res.status(400).json({ message: "⚠️ Invalid Event ID" });
@@ -91,6 +96,6 @@ app.delete("/events/:id", async (req, res) => {
   }
 });
 
-// Start Server
+// ✅ Start Server
 const PORT = 5000;
 app.listen(PORT, () => console.log(`🚀 Event Service running on port ${PORT}`));

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Home</title>
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #205781; /* Updated background color */
+        font-family: Arial, sans-serif;
+      }
+      .container {
+        background: #98d2c0; /* Updated container color */
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        width: 100%;
+        max-width: 400px;
+      }
+      h2 {
+        margin-bottom: 20px;
+        font-weight: bold;
+        color: #205781; /* Matching the background color for contrast */
+      }
+      .btn {
+        width: 100%;
+        margin: 10px 0;
+        font-size: 18px;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        transition: 0.3s;
+        font-weight: bold;
+      }
+      .btn-primary {
+        background-color: #205781;
+        color: white;
+      }
+      .btn-primary:hover {
+        background-color: #174260;
+      }
+      .btn-secondary {
+        background-color: #f4a261;
+        color: white;
+      }
+      .btn-secondary:hover {
+        background-color: #e76f51;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Welcome to User Dashboard</h2>
+      <button class="btn btn-primary" onclick="location.href='booking.html'">
+        📅 Book an Event
+      </button>
+      <button class="btn btn-secondary" onclick="location.href='profile.html'">
+        📝 Update Profile
+      </button>
+    </div>
+    <script>
+      const userId = localStorage.getItem("user_id");
+      console.log("Logged-in User ID:", userId);
+    </script>
+  </body>
+</html>

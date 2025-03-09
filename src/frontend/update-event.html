@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Update Event</title>
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+    <style>
+      body {
+        background-color: #205781;
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+        padding-top: 20px;
+      }
+      .container {
+        background: #98d2c0;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        color: black;
+        max-width: 500px;
+        width: 100%;
+      }
+      .event-card {
+        background: white;
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2 class="text-center">Update Event</h2>
+      <div id="events-list"></div>
+
+      <!-- Update Event Form -->
+      <div class="mt-3">
+        <label for="eventId" class="form-label">Event ID (Required):</label>
+        <input
+          type="text"
+          id="eventId"
+          class="form-control"
+          placeholder="Enter Event ID"
+          required
+        />
+
+        <label for="eventName" class="form-label">Event Name (Optional):</label>
+        <input
+          type="text"
+          id="eventName"
+          class="form-control"
+          placeholder="Enter Event Name"
+        />
+
+        <label for="eventDate" class="form-label">Event Date (Optional):</label>
+        <input type="date" id="eventDate" class="form-control" />
+
+        <label for="eventVenue" class="form-label"
+          >Event Venue (Optional):</label
+        >
+        <input
+          type="text"
+          id="eventVenue"
+          class="form-control"
+          placeholder="Enter Event Venue"
+        />
+
+        <button class="btn btn-primary w-100 mt-3" onclick="updateEvent()">
+          Update Event
+        </button>
+      </div>
+    </div>
+
+    <script>
+      // Fetch and display events
+      async function fetchEvents() {
+        try {
+          let response = await fetch("http://localhost:5000/events");
+          let events = await response.json();
+          console.log("📢 Received Events:", events);
+
+          let eventList = document.getElementById("events-list");
+          eventList.innerHTML = "";
+
+          if (!Array.isArray(events)) {
+            console.error("⚠️ Unexpected response format:", events);
+            return;
+          }
+
+          events.forEach((event) => {
+            eventList.innerHTML += `<div class='event-card'>
+                        <strong>${event.name}</strong> - ${new Date(
+              event.date
+            ).toLocaleDateString()}<br>
+                        Venue: ${event.venue}<br>
+                        <small>ID: ${event._id}</small>
+                    </div>`;
+          });
+        } catch (error) {
+          console.error("❌ Failed to fetch events:", error);
+        }
+      }
+
+      // Update Event Function
+      async function updateEvent() {
+        const eventId = document.getElementById("eventId").value.trim();
+        const name = document.getElementById("eventName").value.trim();
+        const date = document.getElementById("eventDate").value;
+        const venue = document.getElementById("eventVenue").value.trim();
+
+        if (!eventId) {
+          alert("❌ Event ID is required.");
+          return;
+        }
+
+        const eventData = {};
+        if (name) eventData.name = name;
+        if (date) eventData.date = date;
+        if (venue) eventData.venue = venue;
+
+        if (Object.keys(eventData).length === 0) {
+          alert("⚠️ No fields to update. Please enter at least one detail.");
+          return;
+        }
+
+        try {
+          let response = await fetch(
+            `http://localhost:5000/events/${eventId}`,
+            {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(eventData),
+            }
+          );
+
+          let result = await response.json();
+
+          if (response.ok) {
+            alert("✅ Event Updated Successfully!");
+            window.location.reload(); // Reload to refresh the event list
+          } else {
+            alert("❌ Update Failed: " + result.message);
+          }
+        } catch (error) {
+          alert("❌ Error updating event. Please try again.");
+          console.error("Error:", error);
+        }
+      }
+
+      fetchEvents(); // Load events when the page loads
+    </script>
+  </body>
+</html>

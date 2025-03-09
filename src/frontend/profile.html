@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Update Profile</title>
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+    <style>
+      body {
+        background-color: #205781;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+      }
+      .container {
+        background: #98d2c0;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        color: black;
+        width: 300px;
+      }
+      input {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        padding: 10px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 100%;
+      }
+      button:hover {
+        background: #0056b3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2 class="text-center">Update Profile</h2>
+      <input
+        type="email"
+        id="email"
+        class="form-control"
+        placeholder="Enter your email"
+      />
+      <input
+        type="text"
+        id="name"
+        class="form-control"
+        placeholder="New name (leave empty to keep current)"
+      />
+      <input
+        type="password"
+        id="password"
+        class="form-control"
+        placeholder="New password (leave empty to keep current)"
+      />
+      <button class="btn btn-primary w-100 mt-2" onclick="updateProfile()">
+        Update
+      </button>
+    </div>
+
+    <script>
+      const userId = localStorage.getItem("user_id");
+      console.log("Logged-in User ID:", userId);
+      async function updateProfile() {
+        const userId = localStorage.getItem("user_id"); // Get stored user ID
+        const name = document.getElementById("name").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value.trim();
+
+        if (!userId) {
+          alert("⚠️ User ID not found. Please log in again.");
+          return;
+        }
+
+        const updateData = {};
+        if (name) updateData.name = name;
+        if (email) updateData.email = email;
+        if (password) updateData.password = password;
+
+        if (Object.keys(updateData).length === 0) {
+          alert("⚠️ No changes detected!");
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `http://localhost:8000/update/?user_id=${userId}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(updateData),
+            }
+          );
+
+          const result = await response.json();
+          console.log("📢 Update Response:", result);
+
+          if (response.ok) {
+            alert("✅ Profile updated successfully!");
+          } else {
+            alert("❌ Error: " + result.detail);
+          }
+        } catch (error) {
+          console.error("⚠️ Failed to update profile:", error);
+        }
+      }
+    </script>
+  </body>
+</html>

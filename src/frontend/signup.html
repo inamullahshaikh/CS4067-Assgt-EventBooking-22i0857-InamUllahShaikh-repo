@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Signup</title>
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+    <style>
+      body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #f8f9fa;
+      }
+      .signup-container {
+        width: 100%;
+        max-width: 400px;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="signup-container">
+      <h2 class="text-center">Sign Up</h2>
+      <div id="error-message" class="alert alert-danger d-none"></div>
+      <form id="signupForm">
+        <div class="mb-3">
+          <label for="name" class="form-label">Name</label>
+          <input
+            type="text"
+            class="form-control"
+            id="name"
+            placeholder="Enter your name"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label for="email" class="form-label">Email</label>
+          <input
+            type="email"
+            class="form-control"
+            id="email"
+            placeholder="Enter your email"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <input
+            type="password"
+            class="form-control"
+            id="password"
+            placeholder="Enter your password"
+            required
+          />
+        </div>
+        <button type="submit" class="btn btn-primary w-100" id="signup-btn">
+          Sign Up
+        </button>
+      </form>
+
+      <div id="error-message" class="alert alert-danger hidden"></div>
+
+      <p class="text-center mt-3">
+        Already have an account? <a href="login.html">Login</a>
+      </p>
+    </div>
+
+    <script>
+      document
+        .getElementById("signupForm")
+        .addEventListener("submit", async function (event) {
+          event.preventDefault();
+
+          const name = document.getElementById("name").value.trim();
+          const email = document.getElementById("email").value.trim();
+          const password = document.getElementById("password").value.trim();
+          const errorMessage = document.getElementById("error-message");
+          const signupButton = document.getElementById("signup-btn");
+
+          errorMessage.classList.add("hidden");
+          signupButton.disabled = true;
+          signupButton.textContent = "Signing up...";
+
+          try {
+            let response = await fetch("http://localhost:8000/register/", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ name, email, password }),
+            });
+
+            let result = await response.json();
+
+            if (response.ok) {
+              alert(result.message);
+              window.location.href = "login.html";
+            } else {
+              errorMessage.textContent = result.detail || "Signup failed";
+              errorMessage.classList.remove("hidden");
+            }
+          } catch (error) {
+            errorMessage.textContent = "Failed to connect to the server!";
+            errorMessage.classList.remove("hidden");
+          }
+
+          signupButton.disabled = false;
+          signupButton.textContent = "Sign Up";
+        });
+    </script>
+  </body>
+</html>

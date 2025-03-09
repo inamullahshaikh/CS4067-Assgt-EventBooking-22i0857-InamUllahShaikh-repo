@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin Home</title>
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #205781;
+        font-family: Arial, sans-serif;
+      }
+      .container {
+        background: #98d2c0;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        text-align: center;
+        width: 100%;
+        max-width: 400px;
+      }
+      h2 {
+        margin-bottom: 20px;
+        font-weight: bold;
+        color: #205781;
+      }
+      .btn {
+        width: 100%;
+        margin: 10px 0;
+        font-size: 18px;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        transition: 0.3s;
+        font-weight: bold;
+      }
+      .btn-primary {
+        background-color: #205781;
+        color: white;
+      }
+      .btn-primary:hover {
+        background-color: #174260;
+      }
+      .btn-danger {
+        background-color: #e63946;
+        color: white;
+      }
+      .btn-danger:hover {
+        background-color: #c5283d;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>Welcome to Admin Dashboard</h2>
+      <button
+        class="btn btn-primary"
+        onclick="location.href='create-event.html'"
+      >
+        ➕ Create Event
+      </button>
+      <button
+        class="btn btn-primary"
+        onclick="location.href='update-event.html'"
+      >
+        ✏️ Update Event
+      </button>
+      <button
+        class="btn btn-danger"
+        onclick="location.href='delete-event.html'"
+      >
+        ❌ Delete Event
+      </button>
+    </div>
+    <script>
+      const adminId = localStorage.getItem("admin_id");
+      console.log("Logged-in Admin ID:", adminId);
+    </script>
+  </body>
+</html>

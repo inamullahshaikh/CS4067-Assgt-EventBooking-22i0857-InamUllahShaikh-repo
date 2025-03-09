@@ -3,8 +3,18 @@ from sqlalchemy.orm import Session
 from database import SessionLocal, User
 from auth import hash_password, verify_password, create_access_token
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+# Enable CORS for frontend requests
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5500"],  # Allow frontend requests
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Dependency to get DB session
 def get_db():
@@ -30,7 +40,7 @@ class UserUpdate(BaseModel):
     password: str = None
 
 # User Registration
-@app.post("/register/")
+@app.post("/register/", status_code=200)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == user.email).first()
     if existing_user:
@@ -44,7 +54,9 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+
     return {"message": "User registered successfully"}
+
 
 # User Login
 @app.post("/login/")
@@ -54,21 +66,28 @@ def login_user(user: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_access_token(data={"sub": user.email})
-    return {"access_token": token, "token_type": "bearer"}
+    print(db_user.id)
+    return {"access_token": token, "token_type": "bearer", "user_id": db_user.id}
 
 # Update User Details
 @app.put("/update/")
-def update_user(update_data: UserUpdate, email: str, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.email == email).first()
+def update_user(user_id: int, update_data: UserUpdate, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.id == user_id).first()
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if update_data.name:
+    # Update fields if provided
+    if update_data.name is not None:
         db_user.name = update_data.name
-    if update_data.email:
+    if update_data.email is not None:
+        existing_email = db.query(User).filter(User.email == update_data.email).first()
+        if existing_email and existing_email.id != user_id:
+            raise HTTPException(status_code=400, detail="Email already in use")
         db_user.email = update_data.email
-    if update_data.password:
+    if update_data.password is not None:
         db_user.password_hash = hash_password(update_data.password)
 
     db.commit()
+    db.refresh(db_user)  # Refresh to get updated data
+
     return {"message": "User details updated successfully"}

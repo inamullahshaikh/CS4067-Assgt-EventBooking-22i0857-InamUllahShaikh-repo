@@ -18,6 +18,11 @@ for %%p in (%ports%) do (
     )
 )
 
+:: Install dependencies
+
+:: Start Services
+echo Starting services...
+
 :: Start User Service (FastAPI) on port 8000
 start cmd /k "cd /d %~dp0\src\user-services && uvicorn main:app --host 127.0.0.1 --port 8000"
 
@@ -29,9 +34,6 @@ start cmd /k "cd /d %~dp0\src\booking-services && node book.js"
 
 :: Start Notification Service (Express.js) on port 5002
 start cmd /k "cd /d %~dp0\src\notifications-services && node noti.js"
-
-:: Start Frontend (front.js)
-:: start cmd /k "cd /d %~dp0 && node front.js"
 
 :: Wait a few seconds to let services start
 timeout /t 5

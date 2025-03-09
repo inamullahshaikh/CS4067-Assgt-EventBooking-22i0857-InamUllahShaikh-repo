@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Book an Event</title>
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+    <style>
+      body {
+        background-color: #205781;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+      }
+      .container {
+        background: #98d2c0;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        color: black;
+      }
+      .event-card {
+        background: white;
+        padding: 10px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2 class="text-center">Available Events</h2>
+      <div id="events-list"></div>
+      <div class="mt-3">
+        <label for="eventId" class="form-label">Enter Event ID:</label>
+        <input
+          type="text"
+          id="eventId"
+          class="form-control"
+          placeholder="Event ID"
+        />
+        <button class="btn btn-primary w-100 mt-2" onclick="registerEvent()">
+          Register
+        </button>
+      </div>
+      <div id="event-details" class="mt-3"></div>
+    </div>
+
+    <script>
+      async function fetchEvents() {
+        try {
+          let response = await fetch("http://localhost:5000/events");
+          let events = await response.json();
+          console.log("📢 Received Events:", events);
+          console.log(JSON.stringify(events, null, 2)); // Print JSON in terminal
+
+          let eventList = document.getElementById("events-list");
+          eventList.innerHTML = "";
+
+          if (!Array.isArray(events)) {
+            console.error("⚠️ Unexpected response format:", events);
+            return;
+          }
+
+          events.forEach((event) => {
+            eventList.innerHTML += `<div class='event-card'>
+                    <strong>${event.name}</strong> - ${new Date(
+              event.date
+            ).toLocaleDateString()}<br>
+                    Venue: ${event.venue}<br>
+                    <small>ID: ${event._id}</small>
+                </div>`;
+          });
+        } catch (error) {
+          console.error("❌ Failed to fetch events:", error);
+        }
+      }
+
+      async function registerEvent() {
+        const eventId = document.getElementById("eventId").value.trim();
+        const userId = localStorage.getItem("user_id"); // Get logged-in user ID
+
+        if (!userId) {
+          alert("⚠️ Please log in first!");
+          return;
+        }
+
+        if (!eventId) {
+          alert("⚠️ Please enter an event ID!");
+          return;
+        }
+
+        try {
+          let response = await fetch("http://localhost:5001/bookings", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              user_id: userId,
+              event_id: eventId,
+              payment: true, // Example payment amount
+            }),
+          });
+
+          let result = await response.json();
+          console.log("📢 Booking Response:", result);
+
+          if (response.ok) {
+            alert("✅ Booking Successful!");
+            window.location.href = "user-home.html"; // Redirect to user dashboard
+          } else {
+            alert("❌ Booking Failed: " + result.error);
+          }
+        } catch (error) {
+          alert("⚠️ Failed to connect to the server!");
+        }
+      }
+      const userId = localStorage.getItem("user_id");
+      console.log("Logged-in User ID:", userId);
+
+      fetchEvents();
+    </script>
+  </body>
+</html>
