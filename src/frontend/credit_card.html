@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Payment Details</title>
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+    <style>
+      body {
+        background: linear-gradient(to bottom, #004aad, #1e90ff);
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        font-family: "Poppins", sans-serif;
+      }
+      .payment-container {
+        background: #ffffff;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        color: #333;
+        max-width: 450px;
+        width: 100%;
+      }
+      .btn-primary {
+        background-color: #004aad;
+        border-color: #004aad;
+        transition: all 0.3s ease;
+      }
+      .btn-primary:hover {
+        background-color: #1e90ff;
+        border-color: #1e90ff;
+        transform: scale(1.05);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="payment-container">
+      <h3 class="text-center" style="color: #004aad">Enter Payment Details</h3>
+      <p>
+        <strong>Total Bill: PKR <span id="total-bill">0</span></strong>
+      </p>
+      <form id="payment-form">
+        <div class="mb-3">
+          <label for="cardNumber" class="form-label">Card Number</label>
+          <input
+            type="text"
+            class="form-control"
+            id="cardNumber"
+            placeholder="1234 5678 9012 3456"
+            required
+          />
+        </div>
+        <div class="mb-3">
+          <label for="cardHolder" class="form-label">Cardholder Name</label>
+          <input
+            type="text"
+            class="form-control"
+            id="cardHolder"
+            placeholder="John Doe"
+            required
+          />
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label for="expiryDate" class="form-label">Expiry Date</label>
+            <input type="month" class="form-control" id="expiryDate" required />
+          </div>
+          <div class="col-md-6 mb-3">
+            <label for="cvv" class="form-label">CVV</label>
+            <input
+              type="password"
+              class="form-control"
+              id="cvv"
+              placeholder="123"
+              required
+            />
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Pay Now</button>
+      </form>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const tickets = parseInt(localStorage.getItem("tickets"), 10) || 0;
+        const price = parseInt(localStorage.getItem("ticket_price"), 10) || 0;
+        const totalBill = tickets * price;
+        document.getElementById(
+          "total-bill"
+        ).innerText = `Total: PKR ${totalBill}`;
+
+        document
+          .getElementById("payment-form")
+          .addEventListener("submit", async function (event) {
+            event.preventDefault();
+            const cardNumber = document
+              .getElementById("cardNumber")
+              .value.replace(/\s+/g, "");
+            const cardHolder = document
+              .getElementById("cardHolder")
+              .value.trim();
+            const expiryDate = document.getElementById("expiryDate").value;
+            const cvv = document.getElementById("cvv").value;
+            const today = new Date();
+            const expiry = new Date(expiryDate + "-01");
+            if (!/^[0-9]{16}$/.test(cardNumber)) {
+              alert("⚠️ Invalid card number. Please enter a 16-digit number.");
+              return;
+            }
+            if (!/^[a-zA-Z ]+$/.test(cardHolder)) {
+              alert("⚠️ Invalid name. Please enter a valid cardholder name.");
+              return;
+            }
+            if (!expiryDate || expiry <= today) {
+              alert("⚠️ Invalid expiry date. Please select a future date.");
+              return;
+            }
+            if (!/^[0-9]{3}$/.test(cvv)) {
+              alert("⚠️ Invalid CVV. Please enter a 3-digit CVV.");
+              return;
+            }
+
+            // ✅ Fetch user and event details
+            const user_id = localStorage.getItem("user_id");
+            const event_id = localStorage.getItem("event_id");
+            const totalticks = localStorage.getItem("total_tickets");
+            if (!user_id || !event_id) {
+              alert("⚠️ Missing user or event details.");
+              return;
+            }
+
+            try {
+              // ✅ Step 1: Create Booking
+              const bookingResponse = await fetch(
+                "http://localhost:5001/bookings",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    user_id,
+                    event_id,
+                    payment: price,
+                    tickets_purchased: tickets,
+                    price: totalBill,
+                  }),
+                }
+              );
+
+              const bookingData = await bookingResponse.json();
+              if (!bookingResponse.ok) {
+                alert(`❌ Payment Failed: ${bookingData.error}`);
+                return;
+              }
+              console.log("Total tickets before update:", totalticks);
+              console.log("Tickets purchased:", tickets);
+              console.log("New tickets_avail:", totalticks - tickets);
+
+              // ✅ Step 2: Update Event Tickets
+              const updatedTickets = totalticks - tickets;
+              if (isNaN(updatedTickets) || updatedTickets < 0) {
+                alert("⚠️ Error: Invalid ticket calculation.");
+                return;
+              }
+
+              const updateResponse = await fetch(
+                `http://localhost:5000/events/${event_id}`,
+                {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    tickets_avail: updatedTickets,
+                  }),
+                }
+              );
+
+              const updateData = await updateResponse.json();
+              if (!updateResponse.ok) {
+                alert(
+                  `⚠️ Booking confirmed, but ticket update failed: ${updateData.error}`
+                );
+                return;
+              }
+
+              alert("✅ Payment Successful! Booking Confirmed.");
+              window.location.href = "user-home.html";
+            } catch (error) {
+              alert("❌ Error processing booking. Please try again later.");
+            }
+          });
+      });
+    </script>
+  </body>
+</html>

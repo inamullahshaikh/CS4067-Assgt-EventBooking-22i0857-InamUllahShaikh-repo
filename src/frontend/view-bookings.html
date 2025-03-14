@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Bookings</title>
+    <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+    <style>
+      body {
+        background: linear-gradient(to bottom, #004aad, #1e90ff);
+        color: #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh; /* ✅ Change height to min-height */
+        font-family: "Poppins", sans-serif;
+        margin: 0;
+        padding: 20px; /* ✅ Add padding to prevent content from touching edges */
+      }
+
+      .container {
+        background: #ffffff;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        text-align: center;
+        width: 100%;
+        max-width: 500px;
+        color: #333;
+        overflow-y: auto; /* ✅ Allows scrolling if content overflows */
+      }
+
+      h2 {
+        margin-bottom: 15px;
+        font-weight: bold;
+        color: #004aad;
+      }
+
+      .booking-card {
+        background: #f8f8f8;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        text-align: left;
+      }
+
+      .booking-card p {
+        margin: 5px 0;
+        font-size: 14px;
+      }
+
+      .btn-danger {
+        width: 100%;
+        font-size: 14px;
+        padding: 8px;
+        border-radius: 6px;
+        border: none;
+        background-color: #d9534f;
+        font-weight: bold;
+        color: white;
+        transition: 0.3s;
+      }
+
+      .btn-danger:hover {
+        background-color: #c9302c;
+        transform: scale(1.05);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>My Bookings</h2>
+      <div id="bookingsList">Loading...</div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        loadBookings();
+      });
+
+      async function loadBookings() {
+        const userId = localStorage.getItem("user_id");
+        if (!userId) {
+          console.error("⚠️ User ID not found in localStorage.");
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `http://localhost:5001/bookings/${userId}/getuser`
+          );
+          let data = await response.json();
+
+          if (!response.ok) {
+            throw new Error(data.message || "Failed to fetch bookings.");
+          }
+
+          if (!Array.isArray(data)) {
+            data = [data]; // ✅ Convert single object to array if necessary
+          }
+
+          const bookingsContainer = document.getElementById("bookingsList");
+          bookingsContainer.innerHTML = ""; // ✅ Clear previous content
+
+          if (data.length === 0) {
+            bookingsContainer.innerHTML = `<p>No bookings found.</p>`;
+            return;
+          }
+
+          for (const booking of data) {
+            try {
+              // ✅ Fetch event details using event_id
+              const eventResponse = await fetch(
+                `http://localhost:5000/events/${booking.event_id}`
+              );
+              const eventData = await eventResponse.json();
+
+              if (!eventResponse.ok) {
+                console.warn(
+                  `⚠️ Event Not Found for Event ID: ${booking.event_id}`
+                );
+                continue; // Skip this booking if event is not found
+              }
+
+              console.log(
+                `📌 Event Data for Event ID ${booking.event_id}:`,
+                eventData
+              );
+
+              // ✅ Format date properly
+              const eventDate = new Date(eventData.date).toDateString();
+
+              // ✅ Create booking card with all details
+              const bookingElement = document.createElement("div");
+              bookingElement.classList.add("booking-card");
+              bookingElement.innerHTML = `
+          <h3>🎤 Event: <strong>${eventData.name}</strong></h3>
+          <p>📍 Venue: ${eventData.venue}</p>
+          <p>📅 Date: ${eventDate}</p>
+          <p>🔖 Booking ID: ${booking.id}</p>
+          <p>💰 Payment: PKR ${booking.price}</p>
+          <button class="btn-danger" onclick="deleteBooking(${booking.id})">❌ Cancel Booking</button>
+        `;
+              bookingsContainer.appendChild(bookingElement);
+            } catch (eventError) {
+              console.error(
+                `❌ Error fetching event details for Event ID ${booking.event_id}:`,
+                eventError
+              );
+            }
+          }
+        } catch (error) {
+          console.error("⚠️ Error fetching bookings:", error);
+        }
+      }
+
+      async function deleteBooking(bookingId) {
+        if (!confirm("⚠️ Are you sure you want to cancel this booking?"))
+          return;
+
+        try {
+          const response = await fetch(
+            `http://localhost:5001/bookings/${bookingId}`,
+            {
+              method: "DELETE",
+            }
+          );
+
+          const result = await response.json();
+          alert(result.message || "✅ Booking cancelled successfully!");
+
+          loadBookings(); // Refresh bookings after deletion
+        } catch (error) {
+          console.error("⚠️ Error deleting booking:", error);
+          alert("❌ Failed to cancel booking.");
+        }
+      }
+    </script>
+  </body>
+</html>

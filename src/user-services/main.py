@@ -39,6 +39,10 @@ class UserUpdate(BaseModel):
     email: str = None
     password: str = None
 
+class MatchPasswordRequest(BaseModel):
+    user_id: int
+    password: str
+
 # User Registration
 @app.post("/register/", status_code=200)
 def register_user(user: UserCreate, db: Session = Depends(get_db)):
@@ -57,7 +61,6 @@ def register_user(user: UserCreate, db: Session = Depends(get_db)):
 
     return {"message": "User registered successfully"}
 
-
 # User Login
 @app.post("/login/")
 def login_user(user: UserLogin, db: Session = Depends(get_db)):
@@ -66,7 +69,6 @@ def login_user(user: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_access_token(data={"sub": user.email})
-    print(db_user.id)
     return {"access_token": token, "token_type": "bearer", "user_id": db_user.id}
 
 # Update User Details
@@ -91,3 +93,28 @@ def update_user(user_id: int, update_data: UserUpdate, db: Session = Depends(get
     db.refresh(db_user)  # Refresh to get updated data
 
     return {"message": "User details updated successfully"}
+
+# ✅ New API Call: Match Password
+@app.post("/match-password/")
+def match_password(request: MatchPasswordRequest, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.id == request.user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if verify_password(request.password, db_user.password_hash):
+        return {"match": True}
+    else:
+        return {"match": False}
+
+# ✅ New API Call: Get User by ID
+@app.get("/get-user/")
+def get_user(user_id: int, db: Session = Depends(get_db)):
+    db_user = db.query(User).filter(User.id == user_id).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {
+        "user_id": db_user.id,
+        "name": db_user.name,
+        "email": db_user.email
+    }

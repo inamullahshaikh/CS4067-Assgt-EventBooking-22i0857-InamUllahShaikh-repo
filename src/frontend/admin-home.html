@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Home</title>
+    <title>Create Event</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -21,11 +21,20 @@
       }
       h2 {
         color: #333;
+        margin-bottom: 20px;
+      }
+      .form-control {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 15px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
       }
       .btn {
         display: block;
         width: 100%;
-        margin: 10px 0;
+        margin-top: 15px;
         padding: 10px;
         font-size: 16px;
         color: white;
@@ -33,19 +42,119 @@
         border: none;
         border-radius: 5px;
         cursor: pointer;
-        text-decoration: none;
+        font-weight: bold;
       }
       .btn:hover {
         background-color: #0056b3;
+      }
+      .error {
+        color: red;
+        font-size: 14px;
+        margin-top: -10px;
+        margin-bottom: 10px;
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <h2>Admin Dashboard</h2>
-      <a href="create-event.html" class="btn">Create Event</a>
-      <a href="update-event.html" class="btn">Update Event</a>
-      <a href="delete-event.html" class="btn">Delete Event</a>
+      <h2>Create Event</h2>
+      <input
+        type="text"
+        id="eventName"
+        class="form-control"
+        placeholder="Event Name"
+      />
+      <span id="nameError" class="error"></span>
+
+      <input type="date" id="eventDate" class="form-control" />
+      <span id="dateError" class="error"></span>
+
+      <input
+        type="text"
+        id="eventVenue"
+        class="form-control"
+        placeholder="Event Venue"
+      />
+      <span id="venueError" class="error"></span>
+
+      <input
+        type="text"
+        id="eventTickets"
+        class="form-control"
+        placeholder="Tickets Available"
+      />
+      <span id="ticketsError" class="error"></span>
+
+      <input
+        type="text"
+        id="eventPrice"
+        class="form-control"
+        placeholder="Price in PKR"
+      />
+      <span id="priceError" class="error"></span>
+
+      <button class="btn" onclick="submitEvent()">Create Event</button>
     </div>
+
+    <script>
+      function submitEvent() {
+        const name = document.getElementById("eventName").value.trim();
+        const date = document.getElementById("eventDate").value;
+        const venue = document.getElementById("eventVenue").value.trim();
+        const tickets = document.getElementById("eventTickets").value.trim();
+        const price = document.getElementById("eventPrice").value.trim();
+
+        const today = new Date().toISOString().split("T")[0];
+        let errorMsg = "";
+
+        if (!name) {
+          errorMsg += "❌ Event name is required.\n";
+        }
+        if (!date) {
+          errorMsg += "❌ Event date is required.\n";
+        } else if (date <= today) {
+          errorMsg += "❌ Event date must be in the future.\n";
+        }
+        if (!venue) {
+          errorMsg += "❌ Event venue is required.\n";
+        }
+        if (!tickets || isNaN(tickets) || parseInt(tickets) <= 0) {
+          errorMsg += "❌ Tickets available must be a positive number.\n";
+        }
+        if (!price || isNaN(price) || parseFloat(price) < 0) {
+          errorMsg += "❌ Price must be a valid number.\n";
+        }
+
+        if (errorMsg) {
+          alert(errorMsg);
+          return;
+        }
+
+        fetch("http://localhost:5000/events", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name,
+            date,
+            venue,
+            tickets_avail: tickets,
+            price,
+          }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.error) {
+              alert("❌ " + data.error);
+            } else {
+              alert("✅ Event Created Successfully!");
+              window.location.href = "manage-events.html";
+            }
+          })
+          .catch((error) => {
+            alert("❌ Failed to create event. Please try again.");
+            console.error("Error:", error);
+          });
+      }
+    </script>
   </body>
 </html>

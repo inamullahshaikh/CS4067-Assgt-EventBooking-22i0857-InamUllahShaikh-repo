@@ -7,50 +7,57 @@
     <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
     <style>
       body {
+        background: linear-gradient(to bottom, #004aad, #1e90ff);
+        color: #fff;
         display: flex;
         justify-content: center;
         align-items: center;
         height: 100vh;
-        background-color: #205781; /* Updated background color */
-        font-family: Arial, sans-serif;
+        font-family: "Poppins", sans-serif;
       }
       .container {
-        background: #98d2c0; /* Updated container color */
+        background: #ffffff;
         padding: 30px;
-        border-radius: 15px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         text-align: center;
         width: 100%;
         max-width: 400px;
+        color: #333;
       }
       h2 {
         margin-bottom: 20px;
         font-weight: bold;
-        color: #205781; /* Matching the background color for contrast */
+        color: #004aad;
       }
       .btn {
         width: 100%;
         margin: 10px 0;
         font-size: 18px;
-        padding: 10px;
+        padding: 12px;
         border-radius: 8px;
         border: none;
-        transition: 0.3s;
+        transition: 0.3s ease;
         font-weight: bold;
+        color: white;
       }
       .btn-primary {
-        background-color: #205781;
-        color: white;
+        background-color: #004aad;
+        border-color: #004aad;
       }
       .btn-primary:hover {
-        background-color: #174260;
+        background-color: #1e90ff;
+        border-color: #1e90ff;
+        transform: scale(1.05);
       }
       .btn-secondary {
-        background-color: #f4a261;
-        color: white;
+        background-color: #1e90ff;
+        border-color: #1e90ff;
       }
       .btn-secondary:hover {
-        background-color: #e76f51;
+        background-color: #004aad;
+        border-color: #004aad;
+        transform: scale(1.05);
       }
     </style>
   </head>
@@ -63,7 +70,14 @@
       <button class="btn btn-secondary" onclick="location.href='profile.html'">
         📝 Update Profile
       </button>
+      <button
+        class="btn btn-primary"
+        onclick="location.href='view-bookings.html'"
+      >
+        📚 View Bookings
+      </button>
     </div>
+
     <script>
       const userId = localStorage.getItem("user_id");
       console.log("Logged-in User ID:", userId);

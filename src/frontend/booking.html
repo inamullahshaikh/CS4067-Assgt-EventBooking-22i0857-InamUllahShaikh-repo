@@ -7,48 +7,58 @@
     <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
     <style>
       body {
-        background-color: #205781;
-        color: white;
+        background: linear-gradient(to bottom, #004aad, #1e90ff);
+        color: #fff;
         display: flex;
         justify-content: center;
         align-items: flex-start;
         min-height: 100vh;
         padding-top: 20px;
+        font-family: "Poppins", sans-serif;
       }
       .container {
-        background: #98d2c0;
+        background: #ffffff;
         padding: 20px;
         border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        color: black;
-        max-width: 500px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        color: #333;
+        max-width: 600px;
         width: 100%;
       }
       .event-card {
-        background: white;
-        padding: 10px;
+        background: #ffffff;
+        padding: 15px;
         border-radius: 8px;
-        margin-bottom: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #004aad;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .btn-success {
+        background-color: #004aad;
+        border-color: #004aad;
+        transition: background 0.3s ease, transform 0.2s ease;
+        color: #fff;
+      }
+      .btn-success:hover {
+        background-color: #1e90ff;
+        border-color: #1e90ff;
+        transform: scale(1.05);
+      }
+      .btn-success:active {
+        background-color: #003b8b;
+        border-color: #003b8b;
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <h2 class="text-center">Available Events</h2>
+      <h2 class="text-center" style="color: #004aad">Available Events</h2>
       <div id="events-list"></div>
-      <div class="mt-3">
-        <label for="eventId" class="form-label">Enter Event ID:</label>
-        <input
-          type="text"
-          id="eventId"
-          class="form-control"
-          placeholder="Event ID"
-        />
-        <button class="btn btn-primary w-100 mt-2" onclick="registerEvent()">
-          Register
-        </button>
-      </div>
-      <div id="event-details" class="mt-3"></div>
     </div>
 
     <script>
@@ -56,70 +66,71 @@
         try {
           let response = await fetch("http://localhost:5000/events");
           let events = await response.json();
-          console.log("\ud83d\udce2 Received Events:", events);
-          console.log(JSON.stringify(events, null, 2));
+
+          console.log("📢 Received Events:", events);
 
           let eventList = document.getElementById("events-list");
           eventList.innerHTML = "";
 
-          if (!Array.isArray(events)) {
-            console.error("⚠️ Unexpected response format:", events);
+          if (!Array.isArray(events) || events.length === 0) {
+            eventList.innerHTML = "<p>No events found.</p>";
             return;
           }
 
           events.forEach((event) => {
-            eventList.innerHTML += `<div class='event-card'>
-                    <strong>${event.name}</strong> - ${new Date(
-              event.date
-            ).toLocaleDateString()}<br>
-                    Venue: ${event.venue}<br>
-                    <small>ID: ${event._id}</small>
-                </div>`;
+            const eventDate = new Date(event.date).toLocaleDateString();
+            eventList.innerHTML += `
+              <div class='event-card'>
+                <strong style="color: #004aad;">${
+                  event.name
+                }</strong> - ${eventDate}<br>
+                Venue: ${event.venue}<br>
+                Tickets Available: ${event.tickets_avail || "N/A"}<br>
+                Price: PKR ${event.price || "N/A"}<br>
+                <small>ID: ${event._id}</small>
+                <div class="form-group mt-2">
+                  <label for="tickets-${event._id}">Number of Tickets:</label>
+                  <input type="number" id="tickets-${
+                    event._id
+                  }" class="form-control" min="1" max="${
+              event.tickets_avail
+            }" placeholder="Enter tickets" />
+                  <button class="btn btn-success mt-2" onclick="bookEvent('${
+                    event._id
+                  }', ${event.tickets_avail}, ${event.price})">Book</button>
+                </div>
+              </div>`;
           });
         } catch (error) {
           console.error("❌ Failed to fetch events:", error);
+          document.getElementById("events-list").innerHTML =
+            "<p>Error loading events.</p>";
         }
       }
 
-      async function registerEvent() {
-        const eventId = document.getElementById("eventId").value.trim();
+      async function bookEvent(eventId, maxTickets, price) {
         const userId = localStorage.getItem("user_id");
+        const ticketInput = document.getElementById(`tickets-${eventId}`);
+        const tickets = parseInt(ticketInput.value, 10);
 
         if (!userId) {
           alert("⚠️ Please log in first!");
           return;
         }
 
-        if (!eventId) {
-          alert("⚠️ Please enter an event ID!");
+        if (!tickets || tickets < 1 || tickets > maxTickets) {
+          alert(
+            "⚠️ Please enter a valid number of tickets (1 - " + maxTickets + ")"
+          );
           return;
         }
 
-        try {
-          let response = await fetch("http://localhost:5001/bookings", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              user_id: userId,
-              event_id: eventId,
-              payment: true,
-            }),
-          });
-
-          let result = await response.json();
-          console.log("\ud83d\udce2 Booking Response:", result);
-
-          if (response.ok) {
-            alert("✅ Booking Successful!");
-            window.location.href = "user-home.html";
-          } else {
-            alert("❌ Booking Failed: " + result.error);
-          }
-        } catch (error) {
-          alert("⚠️ Failed to connect to the server!");
-        }
+        localStorage.setItem("event_id", eventId);
+        localStorage.setItem("tickets", tickets);
+        localStorage.setItem("ticket_price", price);
+        localStorage.setItem("total_tickets", maxTickets);
+        console.log(event.tickets_avail);
+        window.location.href = "credit_card.html";
       }
 
       fetchEvents();

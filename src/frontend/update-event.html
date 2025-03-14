@@ -6,29 +6,87 @@
     <title>Update Event</title>
     <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
     <style>
+      /* General Page Styling */
+      html,
       body {
-        background-color: #205781;
-        color: white;
-        display: flex;
-        justify-content: center;
-        align-items: flex-start;
         min-height: 100vh;
-        padding-top: 20px;
+        background: linear-gradient(to bottom, #004aad, #1e90ff);
+        font-family: "Poppins", sans-serif;
+        margin: 0;
+        padding: 0;
       }
+
       .container {
-        background: #98d2c0;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        color: black;
-        max-width: 500px;
+        background: #ffffff;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+        text-align: center;
         width: 100%;
+        max-width: 420px;
+        margin: 50px auto;
       }
+
+      h2 {
+        color: #004aad;
+      }
+
+      .form-control {
+        margin-bottom: 15px;
+        padding: 12px;
+        font-size: 16px;
+        border-radius: 8px;
+        border: 2px solid #ddd;
+        transition: border 0.3s ease;
+      }
+
+      .form-control:focus {
+        border-color: #6d28d9;
+        box-shadow: 0 0 5px rgba(109, 40, 217, 0.5);
+      }
+
+      .btn-primary {
+        background: linear-gradient(to right, #004aad, #1e90ff);
+        color: white;
+        width: 100%;
+        margin-top: 15px;
+        font-size: 18px;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        transition: 0.3s ease-in-out;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .btn-primary:hover {
+        background: linear-gradient(to right, #1e90ff, #004aad);
+        transform: scale(1.03);
+      }
+
+      /* Event Cards */
       .event-card {
-        background: white;
-        padding: 10px;
+        background: #f8f9fa;
+        padding: 15px;
         border-radius: 8px;
         margin-bottom: 10px;
+        border-left: 5px solid #007bff;
+        text-align: left;
+      }
+
+      .event-card button {
+        background: #004aad;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-top: 8px;
+        width: 100%;
+      }
+
+      .event-card button:hover {
+        background: #1e90ff;
       }
     </style>
   </head>
@@ -39,16 +97,9 @@
 
       <!-- Update Event Form -->
       <div class="mt-3">
-        <label for="eventId" class="form-label">Event ID (Required):</label>
-        <input
-          type="text"
-          id="eventId"
-          class="form-control"
-          placeholder="Enter Event ID"
-          required
-        />
+        <input type="hidden" id="eventId" />
 
-        <label for="eventName" class="form-label">Event Name (Optional):</label>
+        <label for="eventName" class="form-label">Event Name:</label>
         <input
           type="text"
           id="eventName"
@@ -56,12 +107,10 @@
           placeholder="Enter Event Name"
         />
 
-        <label for="eventDate" class="form-label">Event Date (Optional):</label>
+        <label for="eventDate" class="form-label">Event Date:</label>
         <input type="date" id="eventDate" class="form-control" />
 
-        <label for="eventVenue" class="form-label"
-          >Event Venue (Optional):</label
-        >
+        <label for="eventVenue" class="form-label">Event Venue:</label>
         <input
           type="text"
           id="eventVenue"
@@ -69,7 +118,23 @@
           placeholder="Enter Event Venue"
         />
 
-        <button class="btn btn-primary w-100 mt-3" onclick="updateEvent()">
+        <label for="eventPrice" class="form-label">Price in PKR:</label>
+        <input
+          type="number"
+          id="eventPrice"
+          class="form-control"
+          placeholder="Enter Price"
+        />
+
+        <label for="eventTickets" class="form-label">Tickets Available:</label>
+        <input
+          type="number"
+          id="eventTickets"
+          class="form-control"
+          placeholder="Enter Ticket Count"
+        />
+
+        <button class="btn btn-primary mt-3" onclick="updateEvent()">
           Update Event
         </button>
       </div>
@@ -77,55 +142,75 @@
 
     <script>
       // Fetch and display events
+      // Fetch and display events with emojis
       async function fetchEvents() {
         try {
           let response = await fetch("http://localhost:5000/events");
           let events = await response.json();
+
           console.log("📢 Received Events:", events);
 
           let eventList = document.getElementById("events-list");
           eventList.innerHTML = "";
 
-          if (!Array.isArray(events)) {
-            console.error("⚠️ Unexpected response format:", events);
+          if (!Array.isArray(events) || events.length === 0) {
+            eventList.innerHTML = "<p>🚫 No events found.</p>";
             return;
           }
 
           events.forEach((event) => {
-            eventList.innerHTML += `<div class='event-card'>
-                        <strong>${event.name}</strong> - ${new Date(
-              event.date
-            ).toLocaleDateString()}<br>
-                        Venue: ${event.venue}<br>
-                        <small>ID: ${event._id}</small>
-                    </div>`;
+            const eventDate = new Date(event.date).toLocaleDateString();
+            eventList.innerHTML += `
+        <div class="event-card">
+            <h4>🎉 <strong>${event.name}</strong></h4>
+            📅 <strong>Date:</strong> ${eventDate} <br>
+            📍 <strong>Venue:</strong> ${event.venue} <br>
+            🎟️ <strong>Tickets Available:</strong> ${
+              event.tickets_avail || "N/A"
+            } <br>
+            💰 <strong>Price:</strong> PKR ${event.price || "N/A"} <br>
+            🆔 <small><strong>ID:</strong> ${event._id}</small> <br>
+            <button class="btn btn-sm btn-warning mt-2" onclick="fillUpdateForm('${
+              event._id
+            }', '${event.name}', '${event.date}', '${event.venue}', '${
+              event.price
+            }', '${event.tickets_avail}')">
+              ✏️ Update Event
+            </button>
+        </div>`;
           });
         } catch (error) {
           console.error("❌ Failed to fetch events:", error);
+          document.getElementById("events-list").innerHTML =
+            "<p>⚠️ Error loading events.</p>";
         }
+      }
+
+      // Fill form with event details for updating
+      function fillUpdateForm(id, name, date, venue, price, tickets_avail) {
+        document.getElementById("eventId").value = id;
+        document.getElementById("eventName").value = name || "";
+        document.getElementById("eventDate").value = date || "";
+        document.getElementById("eventVenue").value = venue || "";
+        document.getElementById("eventPrice").value = price || "";
+        document.getElementById("eventTickets").value = tickets_avail || "";
       }
 
       // Update Event Function
       async function updateEvent() {
         const eventId = document.getElementById("eventId").value.trim();
-        const name = document.getElementById("eventName").value.trim();
-        const date = document.getElementById("eventDate").value;
-        const venue = document.getElementById("eventVenue").value.trim();
-
         if (!eventId) {
-          alert("❌ Event ID is required.");
+          alert("❌ Please select an event to update.");
           return;
         }
 
-        const eventData = {};
-        if (name) eventData.name = name;
-        if (date) eventData.date = date;
-        if (venue) eventData.venue = venue;
-
-        if (Object.keys(eventData).length === 0) {
-          alert("⚠️ No fields to update. Please enter at least one detail.");
-          return;
-        }
+        const eventData = {
+          name: document.getElementById("eventName").value.trim(),
+          date: document.getElementById("eventDate").value,
+          venue: document.getElementById("eventVenue").value.trim(),
+          price: document.getElementById("eventPrice").value.trim(),
+          tickets_avail: document.getElementById("eventTickets").value.trim(),
+        };
 
         try {
           let response = await fetch(
@@ -141,7 +226,7 @@
 
           if (response.ok) {
             alert("✅ Event Updated Successfully!");
-            window.location.reload(); // Reload to refresh the event list
+            window.location.reload();
           } else {
             alert("❌ Update Failed: " + result.message);
           }
@@ -151,7 +236,7 @@
         }
       }
 
-      fetchEvents(); // Load events when the page loads
+      fetchEvents();
     </script>
   </body>
 </html>

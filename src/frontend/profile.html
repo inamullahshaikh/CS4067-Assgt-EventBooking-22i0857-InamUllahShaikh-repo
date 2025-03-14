@@ -7,52 +7,113 @@
     <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
     <style>
       body {
-        background-color: #205781;
-        color: white;
+        background: linear-gradient(to bottom, #004aad, #1e90ff);
+        color: #fff;
         display: flex;
-        flex-direction: column;
-        align-items: center;
         justify-content: center;
+        align-items: center;
         height: 100vh;
+        font-family: "Poppins", sans-serif;
       }
       .container {
-        background: #98d2c0;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        color: black;
-        width: 300px;
+        background: #ffffff;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        text-align: center;
+        width: 100%;
+        max-width: 400px;
+        color: #333;
+      }
+      h2 {
+        margin-bottom: 15px;
+        font-weight: bold;
+        color: #004aad;
       }
       input {
         width: 100%;
-        padding: 10px;
+        padding: 12px;
         margin: 10px 0;
-        border: 1px solid #ccc;
-        border-radius: 5px;
+        border: 2px solid #ccc;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: 0.3s;
       }
-      button {
-        background: #007bff;
-        color: white;
-        padding: 10px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
+      input:focus {
+        border-color: #004aad;
+        outline: none;
+        box-shadow: 0 0 5px rgba(0, 74, 173, 0.5);
+      }
+      .btn {
         width: 100%;
+        margin-top: 10px;
+        font-size: 16px;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        transition: 0.3s ease;
+        font-weight: bold;
+        color: white;
       }
-      button:hover {
-        background: #0056b3;
+      .btn-primary {
+        background-color: #004aad;
+        border-color: #004aad;
+      }
+      .btn-primary:hover {
+        background-color: #1e90ff;
+        transform: scale(1.05);
+      }
+      .btn-warning {
+        background-color: #ff9800;
+        border: none;
+      }
+      .btn-warning:hover {
+        background-color: #e68900;
+        transform: scale(1.05);
+      }
+      .user-info-bar {
+        background-color: #004aad;
+        color: white;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: left;
+        margin-bottom: 20px;
+      }
+      .user-info-bar p {
+        margin: 5px 0;
+        font-size: 14px;
+      }
+      .password-update {
+        background: #f8f8f8;
+        padding: 15px;
+        border-radius: 10px;
+        margin-top: 20px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        text-align: left;
+      }
+      .password-update h3 {
+        font-size: 16px;
+        color: #004aad;
+        margin-bottom: 10px;
+      }
+      .hidden {
+        display: none;
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <h2 class="text-center">Update Profile</h2>
-      <input
-        type="email"
-        id="email"
-        class="form-control"
-        placeholder="Enter your email"
-      />
+      <!-- User Info Bar -->
+      <div class="user-info-bar">
+        <p>
+          <strong>Name:</strong> <span id="userNameDisplay">Loading...</span>
+        </p>
+        <p>
+          <strong>Email:</strong> <span id="userEmailDisplay">Loading...</span>
+        </p>
+      </div>
+
+      <h2>Update Profile</h2>
       <input
         type="text"
         id="name"
@@ -60,24 +121,77 @@
         placeholder="New name (leave empty to keep current)"
       />
       <input
-        type="password"
-        id="password"
+        type="email"
+        id="email"
         class="form-control"
-        placeholder="New password (leave empty to keep current)"
+        placeholder="New email (leave empty to keep current)"
       />
-      <button class="btn btn-primary w-100 mt-2" onclick="updateProfile()">
-        Update
+      <button class="btn btn-primary" onclick="updateProfile()">
+        Update Profile
       </button>
+
+      <!-- Update Password Section -->
+      <div class="password-update">
+        <h3>Change Password</h3>
+        <input
+          type="password"
+          id="currentPassword"
+          class="form-control"
+          placeholder="Current Password"
+        />
+        <input
+          type="password"
+          id="newPassword"
+          class="form-control hidden"
+          placeholder="New Password"
+        />
+        <button
+          class="btn btn-warning"
+          id="verifyPasswordBtn"
+          onclick="verifyCurrentPassword()"
+        >
+          Verify Password
+        </button>
+        <button
+          class="btn btn-primary hidden"
+          id="updatePasswordBtn"
+          onclick="updatePassword()"
+        >
+          Update Password
+        </button>
+      </div>
     </div>
 
     <script>
       const userId = localStorage.getItem("user_id");
-      console.log("Logged-in User ID:", userId);
+
+      // Fetch User Info and Display in the User Bar
+      async function loadUserInfo() {
+        if (!userId) {
+          alert("⚠️ User ID not found. Please log in again.");
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `http://localhost:8000/get-user/?user_id=${userId}`
+          );
+          const userData = await response.json();
+
+          document.getElementById("userNameDisplay").innerText = userData.name;
+          document.getElementById("userEmailDisplay").innerText =
+            userData.email;
+
+          resetForm(); // Ensure all inputs are cleared when page loads
+        } catch (error) {
+          console.error("⚠️ Failed to load user info:", error);
+        }
+      }
+
+      // Update Profile Function
       async function updateProfile() {
-        const userId = localStorage.getItem("user_id"); // Get stored user ID
         const name = document.getElementById("name").value.trim();
         const email = document.getElementById("email").value.trim();
-        const password = document.getElementById("password").value.trim();
 
         if (!userId) {
           alert("⚠️ User ID not found. Please log in again.");
@@ -87,7 +201,6 @@
         const updateData = {};
         if (name) updateData.name = name;
         if (email) updateData.email = email;
-        if (password) updateData.password = password;
 
         if (Object.keys(updateData).length === 0) {
           alert("⚠️ No changes detected!");
@@ -99,25 +212,92 @@
             `http://localhost:8000/update/?user_id=${userId}`,
             {
               method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-              },
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify(updateData),
             }
           );
 
-          const result = await response.json();
-          console.log("📢 Update Response:", result);
-
           if (response.ok) {
             alert("✅ Profile updated successfully!");
+            loadUserInfo(); // Reload data
           } else {
-            alert("❌ Error: " + result.detail);
+            alert("❌ Error updating profile.");
           }
         } catch (error) {
           console.error("⚠️ Failed to update profile:", error);
         }
       }
+
+      // Verify Current Password
+      async function verifyCurrentPassword() {
+        const currentPassword = document
+          .getElementById("currentPassword")
+          .value.trim();
+        if (!currentPassword) {
+          alert("⚠️ Please enter your current password.");
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            "http://localhost:8000/match-password/",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                user_id: userId,
+                password: currentPassword,
+              }),
+            }
+          );
+
+          const result = await response.json();
+          if (result.match) {
+            document.getElementById("newPassword").classList.remove("hidden");
+            document
+              .getElementById("updatePasswordBtn")
+              .classList.remove("hidden");
+            document
+              .getElementById("verifyPasswordBtn")
+              .classList.add("hidden");
+          } else {
+            alert("❌ Incorrect password!");
+          }
+        } catch (error) {
+          console.error("⚠️ Failed to verify password:", error);
+        }
+      }
+
+      // Update Password
+      async function updatePassword() {
+        const newPassword = document.getElementById("newPassword").value.trim();
+        if (!newPassword) {
+          alert("⚠️ Please enter a new password.");
+          return;
+        }
+
+        await fetch(`http://localhost:8000/update/?user_id=${userId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password: newPassword }),
+        });
+
+        alert("✅ Password updated successfully!");
+        loadUserInfo(); // Reload and reset form
+      }
+
+      // Reset all inputs
+      function resetForm() {
+        document.getElementById("name").value = "";
+        document.getElementById("email").value = "";
+        document.getElementById("currentPassword").value = "";
+        document.getElementById("newPassword").value = "";
+        document.getElementById("newPassword").classList.add("hidden");
+        document.getElementById("updatePasswordBtn").classList.add("hidden");
+        document.getElementById("verifyPasswordBtn").classList.remove("hidden");
+      }
+
+      loadUserInfo();
     </script>
   </body>
 </html>

@@ -6,60 +6,104 @@
     <title>Create Event</title>
     <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
     <style>
+      /* Background Styling */
       body {
         display: flex;
         justify-content: center;
         align-items: center;
         height: 100vh;
-        background-color: #205781;
-        font-family: Arial, sans-serif;
+        background: linear-gradient(to bottom, #004aad, #1e90ff);
+        font-family: "Poppins", sans-serif;
+        margin: 0;
       }
+
+      /* Form Container */
       .container {
-        background: #98d2c0;
+        background: #ffffff;
         padding: 30px;
         border-radius: 15px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
         text-align: center;
         width: 100%;
-        max-width: 400px;
+        max-width: 420px;
       }
+
+      /* Heading */
       h2 {
         margin-bottom: 20px;
         font-weight: bold;
-        color: #205781;
+        color: #004aad;
       }
-      .btn-primary {
-        background-color: #205781;
-        color: white;
-        width: 100%;
-        margin-top: 15px;
-        font-size: 18px;
-        padding: 10px;
-        border-radius: 8px;
-        border: none;
-        transition: 0.3s;
-        font-weight: bold;
-      }
-      .btn-primary:hover {
-        background-color: #174260;
-      }
+
+      /* Input Fields */
       .form-control {
         margin-bottom: 15px;
-        padding: 10px;
+        padding: 12px;
         font-size: 16px;
         border-radius: 8px;
+        border: 2px solid #ddd;
+        transition: border 0.3s ease;
       }
+
+      .form-control:focus {
+        border-color: #6d28d9;
+        box-shadow: 0 0 5px rgba(109, 40, 217, 0.5);
+      }
+
+      /* Error Message */
       .error {
         color: red;
         font-size: 14px;
         margin-top: -10px;
         margin-bottom: 10px;
       }
+
+      /* Submit Button */
+      .btn-primary {
+        background: linear-gradient(to right, #004aad, #1e90ff);
+        color: white;
+        width: 100%;
+        margin-top: 15px;
+        font-size: 18px;
+        padding: 12px;
+        border-radius: 8px;
+        border: none;
+        transition: 0.3s ease-in-out;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .btn-primary:hover {
+        background: linear-gradient(to right, #1e90ff, #004aad);
+        transform: scale(1.03);
+      }
+
+      /* Alert Styling */
+      .alert-box {
+        display: none;
+        padding: 12px;
+        margin-top: 15px;
+        border-radius: 8px;
+        font-weight: bold;
+        text-align: center;
+      }
+
+      .alert-success {
+        background: #d1fae5;
+        color: #065f46;
+        border: 1px solid #10b981;
+      }
+
+      .alert-error {
+        background: #fee2e2;
+        color: #b91c1c;
+        border: 1px solid #ef4444;
+      }
     </style>
   </head>
   <body>
     <div class="container">
-      <h2>Create Event</h2>
+      <h2 class="">🎉Create Event</h2>
       <input
         type="text"
         id="eventName"
@@ -79,7 +123,25 @@
       />
       <span id="venueError" class="error"></span>
 
+      <input
+        type="text"
+        id="eventTickets"
+        class="form-control"
+        placeholder="Tickets Available"
+      />
+      <span id="ticketsError" class="error"></span>
+
+      <input
+        type="text"
+        id="eventPrice"
+        class="form-control"
+        placeholder="Price in PKR"
+      />
+      <span id="priceError" class="error"></span>
+
       <button class="btn-primary" onclick="submitEvent()">Create Event</button>
+
+      <div id="alertBox" class="alert-box"></div>
     </div>
 
     <script>
@@ -87,43 +149,59 @@
         const name = document.getElementById("eventName").value.trim();
         const date = document.getElementById("eventDate").value;
         const venue = document.getElementById("eventVenue").value.trim();
+        const tickets = document.getElementById("eventTickets").value.trim();
+        const price = document.getElementById("eventPrice").value.trim();
+        const alertBox = document.getElementById("alertBox");
 
         const today = new Date().toISOString().split("T")[0];
         let errorMsg = "";
 
-        if (!name) {
-          errorMsg += "❌ Event name is required.\n";
-        }
-        if (!date) {
-          errorMsg += "❌ Event date is required.\n";
-        } else if (date <= today) {
-          errorMsg += "❌ Event date must be in the future.\n";
-        }
-        if (!venue) {
-          errorMsg += "❌ Event venue is required.\n";
-        }
+        if (!name) errorMsg += "❌ Event name is required.<br>";
+        if (!date) errorMsg += "❌ Event date is required.<br>";
+        else if (date <= today)
+          errorMsg += "❌ Event date must be in the future.<br>";
+        if (!venue) errorMsg += "❌ Event venue is required.<br>";
+        if (!tickets || isNaN(tickets) || parseInt(tickets) <= 0)
+          errorMsg += "❌ Tickets available must be a positive number.<br>";
+        if (!price || isNaN(price) || parseFloat(price) < 0)
+          errorMsg += "❌ Price must be a valid number.<br>";
 
         if (errorMsg) {
-          alert(errorMsg);
+          alertBox.innerHTML = errorMsg;
+          alertBox.className = "alert-box alert-error";
+          alertBox.style.display = "block";
           return;
         }
 
         fetch("http://localhost:5000/events", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name, date, venue }),
+          body: JSON.stringify({
+            name,
+            date,
+            venue,
+            tickets_avail: tickets,
+            price,
+          }),
         })
           .then((response) => response.json())
           .then((data) => {
             if (data.error) {
-              alert("❌ " + data.error);
+              alertBox.innerHTML = "❌ " + data.error;
+              alertBox.className = "alert-box alert-error";
             } else {
-              alert("✅ Event Created Successfully!");
-              window.location.href = "manage-events.html";
+              alertBox.innerHTML = "✅ Event Created Successfully!";
+              alertBox.className = "alert-box alert-success";
+              setTimeout(() => {
+                window.location.href = "manage-events.html";
+              }, 1500);
             }
+            alertBox.style.display = "block";
           })
           .catch((error) => {
-            alert("❌ Failed to create event. Please try again.");
+            alertBox.innerHTML = "❌ Failed to create event. Please try again.";
+            alertBox.className = "alert-box alert-error";
+            alertBox.style.display = "block";
             console.error("Error:", error);
           });
       }

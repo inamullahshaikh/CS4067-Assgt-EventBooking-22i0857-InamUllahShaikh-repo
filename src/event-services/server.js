@@ -19,6 +19,8 @@ const eventSchema = new mongoose.Schema(
     name: { type: String, required: true, trim: true },
     date: { type: Date, required: true },
     venue: { type: String, required: true, trim: true },
+    tickets_avail: { type: Number, required: true, min: 0 },
+    price: { type: Number, required: true, min: 0 },
   },
   { collection: "events", timestamps: true }
 );
@@ -27,8 +29,8 @@ const Event = mongoose.model("Event", eventSchema);
 // 🎯 Create Event
 app.post("/events", async (req, res) => {
   try {
-    const { name, date, venue } = req.body;
-    const newEvent = new Event({ name, date, venue });
+    const { name, date, venue, tickets_avail, price } = req.body;
+    const newEvent = new Event({ name, date, venue, tickets_avail, price });
     await newEvent.save();
     res.status(201).json({ message: "✅ Event Created", event: newEvent });
   } catch (err) {
@@ -64,17 +66,26 @@ app.get("/events/:id", async (req, res) => {
 
 // ✏️ Update Event
 app.put("/events/:id", async (req, res) => {
-  if (!mongoose.Types.ObjectId.isValid(req.params.id))
+  if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
     return res.status(400).json({ message: "⚠️ Invalid Event ID" });
+  }
+
+  if (req.body.tickets_avail === undefined) {
+    // ✅ Ensure tickets_avail is present
+    return res.status(400).json({ message: "⚠️ tickets_avail is required" });
+  }
 
   try {
     const updatedEvent = await Event.findByIdAndUpdate(
       req.params.id,
-      req.body,
+      { $set: { tickets_avail: req.body.tickets_avail } }, // ✅ Use $set to update only tickets_avail
       { new: true, runValidators: true }
     );
-    if (!updatedEvent)
+
+    if (!updatedEvent) {
       return res.status(404).json({ message: "❌ Event Not Found" });
+    }
+
     res.json({ message: "✅ Event Updated", event: updatedEvent });
   } catch (err) {
     res.status(400).json({ error: err.message });

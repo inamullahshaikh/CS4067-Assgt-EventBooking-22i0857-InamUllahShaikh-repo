@@ -33,14 +33,17 @@ connectRabbitMQ();
 // 🎯 Create Booking
 app.post("/bookings", async (req, res) => {
   try {
-    const { user_id, event_id, payment } = req.body;
-    if (!user_id || !event_id || !payment) {
+    const { user_id, event_id, tickets_purchased, price } = req.body;
+
+    if (!user_id || !event_id || !tickets_purchased || !price) {
       return res.status(400).json({ error: "⚠️ Missing required fields" });
     }
 
+    const payment = tickets_purchased * price;
+
     const result = await pool.query(
-      "INSERT INTO bookings (user_id, event_id, payment, status) VALUES ($1, $2, $3, 'PENDING') RETURNING *",
-      [user_id, event_id, payment]
+      "INSERT INTO bookings (user_id, event_id, payment, tickets_purchased, price, status) VALUES ($1, $2, $3, $4, $5, 'CONFIRMED') RETURNING *",
+      [user_id, event_id, payment, tickets_purchased, price]
     );
 
     console.log("📢 Booking Created:", result.rows[0]);
@@ -79,6 +82,24 @@ app.get("/bookings/:id", async (req, res) => {
     res.json(result.rows[0]);
   } catch (err) {
     console.error("❌ Error Fetching Booking:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+app.get("/bookings/:userid/getuser", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM bookings WHERE user_id = $1",
+      [req.params.userid] // ✅ Ensure correct parameter name
+    );
+
+    if (result.rows.length === 0) {
+      return res.json([]); // ✅ Return an empty array instead of 404
+    }
+
+    console.log("📢 Bookings Retrieved:", result.rows);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("❌ Error Fetching Bookings:", err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -127,6 +148,35 @@ app.delete("/bookings/:id", async (req, res) => {
   try {
     const result = await pool.query(
       "DELETE FROM bookings WHERE id = $1 RETURNING *",
+      [req.params.id]
+    );
+    if (result.rows.length === 0)
+      return res.status(404).json({ message: "❌ Booking Not Found" });
+
+    console.log("📢 Booking Cancelled:", result.rows[0]);
+
+    // 🔔 Notify Notification Service
+    if (channel) {
+      channel.sendToQueue(
+        "notificationQueue",
+        Buffer.from(
+          JSON.stringify({ event: "BOOKING_CANCELLED", data: result.rows[0] })
+        )
+      );
+    } else {
+      console.error("⚠️ RabbitMQ channel not initialized");
+    }
+
+    res.json({ message: "✅ Booking Cancelled" });
+  } catch (err) {
+    console.error("❌ Error Deleting Booking:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+app.delete("/bookings/:id/byevent", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "DELETE FROM bookings WHERE event_id = $1 RETURNING *",
       [req.params.id]
     );
     if (result.rows.length === 0)

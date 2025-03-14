@@ -7,7 +7,7 @@ const { MongoClient } = require("mongodb");
 const app = express();
 app.use(express.json());
 
-// ✅ PostgreSQL Connection (Booking DB)
+// ✅ PostgreSQL Connection (User Service DB)
 const pgPool = new Pool({
   user: "postgres",
   host: "localhost",
@@ -52,7 +52,7 @@ async function connectRabbitMQ() {
         return;
       }
 
-      const { id: booking_id, user_id, event_id } = data; // Corrected path
+      const { id: booking_id, user_id, event_id, status } = data;
 
       // 🔍 Fetch user email from user_db
       const userResult = await pgPool.query(
@@ -61,26 +61,50 @@ async function connectRabbitMQ() {
       );
       if (userResult.rows.length === 0) throw new Error("User not found");
       const userEmail = userResult.rows[0].email;
+
+      let message;
+      let subject;
+
+      // 🎯 Handle different booking events
+      switch (event) {
+        case "BOOKING_CREATED":
+          subject = "Booking Confirmation";
+          message = `Your booking (ID: ${booking_id}) for event ${event_id} is confirmed!`;
+          break;
+        case "BOOKING_STATUS_UPDATED":
+          subject = "Booking Status Updated";
+          message = `Your booking (ID: ${booking_id}) status has been updated to: ${status}.`;
+          break;
+        case "BOOKING_CANCELLED":
+          subject = "Booking Cancelled";
+          message = `Your booking (ID: ${booking_id}) for event ${event_id} has been cancelled.`;
+          break;
+        default:
+          console.warn("⚠️ Unhandled event:", event);
+          channel.ack(msg);
+          return;
+      }
+
+      // 💾 Store Notification in MongoDB
       await notificationsCollection.insertOne({
         booking_id,
         user_id,
         event_id,
         email: userEmail,
-        message: `Booking confirmed for event ${event_id}`,
+        message,
         timestamp: new Date(),
       });
-      // 📧 Send Email
+
+      // 📧 Send Email Notification
       const mailOptions = {
         from: "inamullahshaikh01@gmail.com",
         to: userEmail,
-        subject: "Booking Confirmation",
-        text: `Your booking (ID: ${booking_id}) for event ${event_id} is confirmed!`,
+        subject,
+        text: message,
       };
       await transporter.sendMail(mailOptions);
 
-      // 💾 Store Notification in MongoDB
-
-      console.log("📨 Email sent & notification stored!");
+      console.log(`📨 Email sent & notification stored for event: ${event}`);
       channel.ack(msg);
     } catch (err) {
       console.error("❌ Error handling notification:", err.message);
