@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: booking-service
+  namespace: event-booking
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: booking-service
+  template:
+    metadata:
+      labels:
+        app: booking-service
+    spec:
+      containers:
+        - name: booking-service
+          image: booking-service-image:latest # Replace with your built image
+          ports:
+            - containerPort: 5002
+          env:
+            - name: DATABASE_URL
+              value: "postgresql+asyncpg://postgres:pass@postgres:5432/bookings_db"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: booking-service
+  namespace: event-booking
+spec:
+  selector:
+    app: booking-service
+  ports:
+    - protocol: TCP
+      port: 5002
+      targetPort: 5002
+  type: ClusterIP

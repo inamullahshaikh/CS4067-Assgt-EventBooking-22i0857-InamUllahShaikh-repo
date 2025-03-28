@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-service
+  namespace: event-booking
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: event-service
+  template:
+    metadata:
+      labels:
+        app: event-service
+    spec:
+      containers:
+        - name: event-service
+          image: event-service-image:latest # Replace with your built image
+          ports:
+            - containerPort: 5000
+          env:
+            - name: DATABASE_URL
+              value: "mongodb://mongo:27017/eventsdb"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: event-service
+  namespace: event-booking
+spec:
+  selector:
+    app: event-service
+  ports:
+    - protocol: TCP
+      port: 5000
+      targetPort: 5000
+  type: ClusterIP
