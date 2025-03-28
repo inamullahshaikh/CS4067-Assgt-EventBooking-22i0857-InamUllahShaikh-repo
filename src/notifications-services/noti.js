@@ -10,14 +10,14 @@ app.use(express.json());
 // ✅ PostgreSQL Connection (User Service DB)
 const pgPool = new Pool({
   user: "postgres",
-  host: "localhost",
+  host: "postgres",
   database: "user_service_db",
-  password: "1234",
+  password: "pass",
   port: 5432,
 });
 
 // ✅ MongoDB Connection (Notifications DB)
-const mongoClient = new MongoClient("mongodb://localhost:27017");
+const mongoClient = new MongoClient("mongodb://mongodb:27017");
 let notificationsCollection;
 mongoClient.connect().then(() => {
   const db = mongoClient.db("notificationsdb");
@@ -35,7 +35,7 @@ const transporter = nodemailer.createTransport({
 
 // ✅ RabbitMQ Connection
 async function connectRabbitMQ() {
-  const connection = await amqp.connect("amqp://localhost");
+  const connection = await amqp.connect("amqp://rabbitmq");
   const channel = await connection.createChannel();
   await channel.assertQueue("notificationQueue");
 

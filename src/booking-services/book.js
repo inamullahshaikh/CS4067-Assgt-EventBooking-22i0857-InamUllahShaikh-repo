@@ -10,9 +10,9 @@ app.use(cors());
 // ✅ PostgreSQL Connection
 const pool = new Pool({
   user: "postgres",
-  host: "localhost",
+  host: "postgres",
   database: "booking_db",
-  password: "1234",
+  password: "pass",
   port: 5432,
 });
 
@@ -20,7 +20,7 @@ const pool = new Pool({
 let channel;
 async function connectRabbitMQ() {
   try {
-    const connection = await amqp.connect("amqp://localhost");
+    const connection = await amqp.connect("amqp://rabbitmq");
     channel = await connection.createChannel();
     await channel.assertQueue("notificationQueue");
     console.log("✅ Connected to RabbitMQ");

@@ -7,7 +7,7 @@ app.use(express.json());
 app.use(cors());
 
 // ✅ MongoDB Connection (Using Mongoose Only)
-const uri = "mongodb://localhost:27017/eventsdb";
+const uri = "mongodb://mongodb:27017/eventsdb";
 mongoose
   .connect(uri, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("✅ MongoDB Connected"))
