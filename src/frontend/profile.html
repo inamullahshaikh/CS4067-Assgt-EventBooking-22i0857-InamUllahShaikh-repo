@@ -174,7 +174,7 @@
 
         try {
           const response = await fetch(
-            `http://localhost:8000/get-user/?user_id=${userId}`
+            `http://host.docker.internal:8000/get-user/?user_id=${userId}`
           );
           const userData = await response.json();
 
@@ -209,7 +209,7 @@
 
         try {
           const response = await fetch(
-            `http://localhost:8000/update/?user_id=${userId}`,
+            `http://host.docker.internal:8000/update/?user_id=${userId}`,
             {
               method: "PUT",
               headers: { "Content-Type": "application/json" },
@@ -240,7 +240,7 @@
 
         try {
           const response = await fetch(
-            "http://localhost:8000/match-password/",
+            "http://host.docker.internal:8000/match-password/",
             {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -276,11 +276,14 @@
           return;
         }
 
-        await fetch(`http://localhost:8000/update/?user_id=${userId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password: newPassword }),
-        });
+        await fetch(
+          `http://host.docker.internal:8000/update/?user_id=${userId}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ password: newPassword }),
+          }
+        );
 
         alert("✅ Password updated successfully!");
         loadUserInfo(); // Reload and reset form

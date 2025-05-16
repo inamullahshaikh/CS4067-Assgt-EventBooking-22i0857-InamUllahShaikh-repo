@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: user-service
-          image: user-service-image:latest # Replace with your built image
+          image: 22i0857/user-service1:latest # Replace with your built image
           ports:
             - containerPort: 8000
           env:

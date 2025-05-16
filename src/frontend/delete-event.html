@@ -106,7 +106,7 @@
       // Fetch and display events with emojis
       async function fetchEvents() {
         try {
-          let response = await fetch("http://localhost:5000/events");
+          let response = await fetch("http://host.docker.internal:5000/events");
           let events = await response.json();
 
           console.log("📢 Received Events:", events);
@@ -155,7 +155,7 @@
 
         try {
           let response = await fetch(
-            `http://localhost:5000/events/${eventId}`,
+            `http://host.docker.internal:5000/events/${eventId}`,
             {
               method: "DELETE",
             }
@@ -166,7 +166,7 @@
           if (response.ok) {
             alert("✅ Event Deleted Successfully!");
             const response = await fetch(
-              `http://localhost:5001/bookings/${eventId}/byevent`,
+              `http://host.docker.internal:5001/bookings/${eventId}/byevent`,
               {
                 method: "DELETE",
               }

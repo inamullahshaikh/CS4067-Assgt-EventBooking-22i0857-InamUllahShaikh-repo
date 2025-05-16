@@ -1,85 +1,4 @@
 services:
-  user-service:
-    build: ./user-services
-    ports:
-      - "8000:8000"
-    depends_on:
-      - mongodb
-    environment:
-      DATABASE_URL: mongodb://mongo:27017/user_service_db
-    networks:
-      - backend
-
-  event-service:
-    build: ./event-services
-    ports:
-      - "5000:5000"
-    depends_on:
-      - mongodb
-    environment:
-      DATABASE_URL: mongodb://mongo:27017/eventsdb
-    networks:
-      - backend
-
-  booking-service:
-    build: ./booking-services
-    ports:
-      - "5002:5002"
-    depends_on:
-      postgres:
-        condition: service_healthy
-      rabbitmq:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:pass@postgres:5432/bookings_db
-    networks:
-      - backend
-
-  notification-service:
-    build: ./notifications-services
-    ports:
-      - "5003:5003"
-    depends_on:
-      - mongodb
-      - rabbitmq
-    environment:
-      DATABASE_URL: mongodb://mongo:27017/notificationsdb
-    networks:
-      - backend
-
-  frontend-service:
-    build: ./frontend
-    ports:
-      - "8080:80"
-    depends_on:
-      - user-service
-      - event-service
-      - booking-service
-      - notification-service
-    networks:
-      - backend
-      - frontend
-
-  postgres:
-    image: postgres:latest
-    environment:
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
-      POSTGRES_DB: users_db
-      PGPORT: 5432
-    ports:
-      - "5432:5432"
-    networks:
-      - backend
-    healthcheck:
-      test:
-        ["CMD-SHELL", "pg_isready -U myuser -d users_db -h localhost -p 5432"]
-      interval: 5s
-      retries: 5
-      timeout: 2s
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    command: ["postgres", "-c", "port=5432"]
   rabbitmq:
     image: rabbitmq:3-management
     container_name: rabbitmq
@@ -100,12 +19,75 @@ services:
 
   mongodb:
     image: mongo:latest
+    container_name: mongo
     ports:
       - "27017:27017"
     networks:
       - backend
     volumes:
       - mongo_data:/data/db
+  user-service:
+    build: ./user-services
+    container_name: user-service
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mongodb
+    restart: always
+    environment:
+      DATABASE_URL: mongodb://mongo:27017/user_service_db
+    networks:
+      - backend
+
+  event-service:
+    build: ./event-services
+    container_name: event-service
+    ports:
+      - "5000:5000"
+    depends_on:
+      - mongodb
+    restart: always
+    environment:
+      DATABASE_URL: mongodb://mongo:27017/eventsdb
+    networks:
+      - backend
+
+  booking-service:
+    build: ./booking-services
+    container_name: booking-service
+    ports:
+      - "5001:5001"
+    restart: always
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mongodb://mongodb:27017/booking_db
+    networks:
+      - backend
+
+  notification-service:
+    build: ./notifications-services
+    container_name: notification-service
+    ports:
+      - "5003:5003"
+    depends_on:
+      - mongodb
+      - rabbitmq
+    restart: always
+    environment:
+      DATABASE_URL: mongodb://mongo:27017/notificationsdb
+    networks:
+      - backend
+
+  frontend:
+    image: nginx:alpine
+    container_name: frontend
+    restart: always
+    volumes:
+      - ./frontend:/usr/share/nginx/html
+    ports:
+      - "80:80"
 
 networks:
   backend:

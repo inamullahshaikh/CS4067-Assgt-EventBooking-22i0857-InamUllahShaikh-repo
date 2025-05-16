@@ -134,7 +134,7 @@
             try {
               // ✅ Step 1: Create Booking
               const bookingResponse = await fetch(
-                "http://localhost:5001/bookings",
+                "http://host.docker.internal:5001/bookings",
                 {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
@@ -165,7 +165,7 @@
               }
 
               const updateResponse = await fetch(
-                `http://localhost:5000/events/${event_id}`,
+                `http://host.docker.internal:5000/events/${event_id}`,
                 {
                   method: "PUT",
                   headers: { "Content-Type": "application/json" },

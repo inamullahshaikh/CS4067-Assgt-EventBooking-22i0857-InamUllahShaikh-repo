@@ -88,11 +88,14 @@
           signupButton.textContent = "Signing up...";
 
           try {
-            let response = await fetch("http://localhost:8000/register/", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ name, email, password }),
-            });
+            let response = await fetch(
+              "http://host.docker.internal:8000/register/",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, email, password }),
+              }
+            );
 
             let result = await response.json();
 

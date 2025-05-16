@@ -1,5 +1,5 @@
 const express = require("express");
-const { Pool } = require("pg");
+const mongoose = require("mongoose");
 const amqp = require("amqplib");
 const cors = require("cors");
 
@@ -7,16 +7,26 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// ✅ PostgreSQL Connection
-const pool = new Pool({
-  user: "postgres",
-  host: "postgres",
-  database: "booking_db",
-  password: "pass",
-  port: 5432,
+// ✅ MongoDB Connection
+mongoose.connect("mongodb://mongodb:27017/booking_db", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+});
+const db = mongoose.connection;
+db.on("error", console.error.bind(console, "❌ MongoDB connection error:"));
+db.once("open", () => console.log("✅ Connected to MongoDB"));
+
+const bookingSchema = new mongoose.Schema({
+  user_id: String,
+  event_id: String,
+  tickets_purchased: Number,
+  price: Number,
+  payment: Number,
+  status: { type: String, default: "CONFIRMED" },
 });
 
-// ✅ RabbitMQ Connection
+const Booking = mongoose.model("Booking", bookingSchema);
+
 let channel;
 async function connectRabbitMQ() {
   try {
@@ -30,141 +40,106 @@ async function connectRabbitMQ() {
 }
 connectRabbitMQ();
 
-// 🎯 Create Booking
 app.post("/bookings", async (req, res) => {
   try {
     const { user_id, event_id, tickets_purchased, price } = req.body;
-
     if (!user_id || !event_id || !tickets_purchased || !price) {
       return res.status(400).json({ error: "⚠️ Missing required fields" });
     }
 
     const payment = tickets_purchased * price;
+    const newBooking = new Booking({
+      user_id,
+      event_id,
+      tickets_purchased,
+      price,
+      payment,
+    });
 
-    const result = await pool.query(
-      "INSERT INTO bookings (user_id, event_id, payment, tickets_purchased, price, status) VALUES ($1, $2, $3, $4, $5, 'CONFIRMED') RETURNING *",
-      [user_id, event_id, payment, tickets_purchased, price]
-    );
+    const saved = await newBooking.save();
+    console.log("📢 Booking Created:", saved);
 
-    console.log("📢 Booking Created:", result.rows[0]);
-
-    // 🔔 Notify Notification Service
     if (channel) {
       channel.sendToQueue(
         "notificationQueue",
-        Buffer.from(
-          JSON.stringify({ event: "BOOKING_CREATED", data: result.rows[0] })
-        )
+        Buffer.from(JSON.stringify({ event: "BOOKING_CREATED", data: saved }))
       );
-    } else {
-      console.error("⚠️ RabbitMQ channel not initialized");
     }
 
-    res
-      .status(201)
-      .json({ message: "✅ Booking Created", booking: result.rows[0] });
+    res.status(201).json({ message: "✅ Booking Created", booking: saved });
   } catch (err) {
     console.error("❌ Error Creating Booking:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 📜 Get Booking by ID
 app.get("/bookings/:id", async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM bookings WHERE id = $1", [
-      req.params.id,
-    ]);
-    if (result.rows.length === 0)
+    const booking = await Booking.findById(req.params.id);
+    if (!booking)
       return res.status(404).json({ message: "❌ Booking Not Found" });
 
-    console.log("📢 Booking Retrieved:", result.rows[0]);
-    res.json(result.rows[0]);
+    res.json(booking);
   } catch (err) {
     console.error("❌ Error Fetching Booking:", err);
     res.status(500).json({ error: err.message });
   }
 });
+
 app.get("/bookings/:userid/getuser", async (req, res) => {
   try {
-    const result = await pool.query(
-      "SELECT * FROM bookings WHERE user_id = $1",
-      [req.params.userid] // ✅ Ensure correct parameter name
-    );
-
-    if (result.rows.length === 0) {
-      return res.json([]); // ✅ Return an empty array instead of 404
-    }
-
-    console.log("📢 Bookings Retrieved:", result.rows);
-    res.json(result.rows);
+    const bookings = await Booking.find({ user_id: req.params.userid });
+    res.json(bookings);
   } catch (err) {
     console.error("❌ Error Fetching Bookings:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ✏️ Update Booking Status
 app.put("/bookings/:id/status", async (req, res) => {
   try {
     const { status } = req.body;
-    if (!status) {
+    if (!status)
       return res.status(400).json({ error: "⚠️ Status field is required" });
-    }
-    const result = await pool.query(
-      "UPDATE bookings SET status = $1 WHERE id = $2 RETURNING *",
-      [status, req.params.id]
+
+    const updated = await Booking.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
     );
 
-    if (result.rows.length === 0)
+    if (!updated)
       return res.status(404).json({ message: "❌ Booking Not Found" });
 
-    console.log("📢 Booking Status Updated:", result.rows[0]);
-
-    // 🔔 Notify Notification Service
     if (channel) {
       channel.sendToQueue(
         "notificationQueue",
         Buffer.from(
-          JSON.stringify({
-            event: "BOOKING_STATUS_UPDATED",
-            data: result.rows[0],
-          })
+          JSON.stringify({ event: "BOOKING_STATUS_UPDATED", data: updated })
         )
       );
-    } else {
-      console.error("⚠️ RabbitMQ channel not initialized");
     }
 
-    res.json({ message: "✅ Booking Status Updated", booking: result.rows[0] });
+    res.json({ message: "✅ Booking Status Updated", booking: updated });
   } catch (err) {
     console.error("❌ Error Updating Booking Status:", err);
     res.status(500).json({ error: err.message });
   }
 });
 
-// ❌ Delete Booking
 app.delete("/bookings/:id", async (req, res) => {
   try {
-    const result = await pool.query(
-      "DELETE FROM bookings WHERE id = $1 RETURNING *",
-      [req.params.id]
-    );
-    if (result.rows.length === 0)
+    const deleted = await Booking.findByIdAndDelete(req.params.id);
+    if (!deleted)
       return res.status(404).json({ message: "❌ Booking Not Found" });
 
-    console.log("📢 Booking Cancelled:", result.rows[0]);
-
-    // 🔔 Notify Notification Service
     if (channel) {
       channel.sendToQueue(
         "notificationQueue",
         Buffer.from(
-          JSON.stringify({ event: "BOOKING_CANCELLED", data: result.rows[0] })
+          JSON.stringify({ event: "BOOKING_CANCELLED", data: deleted })
         )
       );
-    } else {
-      console.error("⚠️ RabbitMQ channel not initialized");
     }
 
     res.json({ message: "✅ Booking Cancelled" });
@@ -173,27 +148,22 @@ app.delete("/bookings/:id", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 app.delete("/bookings/:id/byevent", async (req, res) => {
   try {
-    const result = await pool.query(
-      "DELETE FROM bookings WHERE event_id = $1 RETURNING *",
-      [req.params.id]
-    );
-    if (result.rows.length === 0)
+    const bookings = await Booking.find({ event_id: req.params.id });
+    if (bookings.length === 0)
       return res.status(404).json({ message: "❌ Booking Not Found" });
 
-    console.log("📢 Booking Cancelled:", result.rows[0]);
+    await Booking.deleteMany({ event_id: req.params.id });
 
-    // 🔔 Notify Notification Service
     if (channel) {
       channel.sendToQueue(
         "notificationQueue",
         Buffer.from(
-          JSON.stringify({ event: "BOOKING_CANCELLED", data: result.rows[0] })
+          JSON.stringify({ event: "BOOKING_CANCELLED", data: bookings })
         )
       );
-    } else {
-      console.error("⚠️ RabbitMQ channel not initialized");
     }
 
     res.json({ message: "✅ Booking Cancelled" });
@@ -203,7 +173,6 @@ app.delete("/bookings/:id/byevent", async (req, res) => {
   }
 });
 
-// ✅ Start Server
 const PORT = 5001;
 app.listen(PORT, () =>
   console.log(`🚀 Booking Service running on port ${PORT}`)

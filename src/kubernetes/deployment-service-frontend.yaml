@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend-service
-          image: frontend-image:latest # Replace with your built image
+          image: 22i0857/frontend1:latest # Replace with your built image
           ports:
             - containerPort: 80
 ---

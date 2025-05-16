@@ -88,7 +88,7 @@
 
         try {
           const response = await fetch(
-            `http://localhost:5001/bookings/${userId}/getuser`
+            `http://host.docker.internal:5001/bookings/${userId}/getuser`
           );
           let data = await response.json();
 
@@ -112,7 +112,7 @@
             try {
               // ✅ Fetch event details using event_id
               const eventResponse = await fetch(
-                `http://localhost:5000/events/${booking.event_id}`
+                `http://host.docker.internal:5000/events/${booking.event_id}`
               );
               const eventData = await eventResponse.json();
 
@@ -161,7 +161,7 @@
 
         try {
           const response = await fetch(
-            `http://localhost:5001/bookings/${bookingId}`,
+            `http://host.docker.internal:5001/bookings/${bookingId}`,
             {
               method: "DELETE",
             }

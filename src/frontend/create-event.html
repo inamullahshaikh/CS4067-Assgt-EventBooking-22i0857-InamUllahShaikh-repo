@@ -173,7 +173,7 @@
           return;
         }
 
-        fetch("http://localhost:5000/events", {
+        fetch("http://host.docker.internal:5000/events", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

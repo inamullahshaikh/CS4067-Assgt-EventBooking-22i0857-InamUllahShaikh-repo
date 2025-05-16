@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: event-service
-          image: event-service-image:latest # Replace with your built image
+          image: 22i0857/event-service:latest # Replace with your built image
           ports:
             - containerPort: 5000
           env:

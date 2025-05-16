@@ -15,12 +15,14 @@ spec:
     spec:
       containers:
         - name: booking-service
-          image: booking-service-image:latest # Replace with your built image
+          image: 22i0857/booking-service:latest # Replace with your built image
           ports:
             - containerPort: 5002
           env:
+            - name: RABBITMQ_URL
+              value: "amqp://rabbitmq-service:5672"
             - name: DATABASE_URL
-              value: "postgresql+asyncpg://postgres:pass@postgres:5432/bookings_db"
+              value: "mongodb://mongo:27017/bookings_db"
 ---
 apiVersion: v1
 kind: Service
